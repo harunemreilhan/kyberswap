@@ -1,18 +1,18 @@
 import requests
-from src.constants import AGGREGATOR_DOMAIN, ChainName
-from src.get import SwapRoute
-from src.signer import Signer
+from constants import AGGREGATOR_DOMAIN, ChainName
+from get import SwapRoute
+from signer import Signer
 
 class PostSwapRouteV1:
-    def __init__(self):
+    def __init__(self, private_key):
         self.chain_name = ChainName.BSC
         self.target_path = f"/{self.chain_name}/api/v1/route/build"
-        self.signer = Signer()
-        self.swap_route = SwapRoute()
+        self.swap_route = SwapRoute(private_key=private_key)
+        self.signer = Signer(private_key=private_key)
     
-    async def post_swap_route_v1(self):
+    async def post_swap_route_v1(self, token_in, token_out, amount_in):
         # Get the route summary data to be encoded
-        swap_route_data = self.swap_route.get_swap_route_v1()
+        swap_route_data = self.swap_route.get_swap_route_v1(token_in, token_out, amount_in)
         route_summary = swap_route_data['routeSummary']
 
         # Get the signer's address

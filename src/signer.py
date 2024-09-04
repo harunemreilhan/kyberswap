@@ -1,13 +1,12 @@
-from web3 import Web3
-from src.provider import get_provider  # Import your custom provider function
+from provider import get_provider  # Import your custom provider function
 
 class Signer:
-    def __init__(self):
+    def __init__(self, private_key):
         """
         Initialize the Signer class with a private key.
         CAUTION: Never expose your private keys (i.e., commit to a public repo).
         """
-        self.private_key = "01cd1c6dbc6510b43b6106100c51617c4a2b49e9464fd6878a425f08e48003c1"
+        self.private_key = private_key
         self.provider = get_provider()
         self.account = self._get_account()
 

@@ -1,11 +1,10 @@
 import time
-from src.provider import get_provider
 import json
-from src.signer import Signer
+from signer import Signer
 
 class TokenApproval:
-    def __init__(self):
-        self.signerC = Signer()
+    def __init__(self, private_key):
+        self.signerC = Signer(private_key=private_key)
         self.signer_address = self.signerC.get_signer().address
         self.signer = self.signerC.get_signer()
         self.max_approval_hex = f"0x{64 * 'f'}"

@@ -1,27 +1,28 @@
-from src.post import PostSwapRouteV1
-from src.approval import TokenApproval
-from src.constants import token_in
-from src.signer import Signer
-from src.provider import get_provider
+from post import PostSwapRouteV1
+from approval import TokenApproval
+from signer import Signer
+from provider import get_provider
 
 class V1Swap:
-    def __init__(self):
-        self.post_swap = PostSwapRouteV1()
-        self.signerC = Signer()
+    def __init__(self, private_key):
+        self.post_swap = PostSwapRouteV1(private_key=private_key)
+        self.signerC = Signer(private_key=private_key)
+        self.approval = TokenApproval(private_key=private_key)
         self.signer_address = self.signerC.get_signer().address
         self.signer = self.signerC.get_signer()
         self.provider = get_provider()
-    async def v1_swap(self):
+
+    async def v1_swap(self, token_in, token_out, amount_in):
         # Get the swap data required to execute the transaction on-chain
-        swap_data = await self.post_swap.post_swap_route_v1()
+        swap_data = await self.post_swap.post_swap_route_v1(token_in, token_out, amount_in)
         encoded_swap_data = swap_data['data']
         router_contract = swap_data['routerAddress']
 
         # Use the configured signer to submit the on-chain transactions
 
         # Ensure that the router contract has sufficient allowance
-        approval = TokenApproval()
-        await approval.get_token_approval(token_in.address, self.signer_address, router_contract, swap_data['amountIn'])
+
+        await self.approval.get_token_approval(token_in.address, self.signer_address, router_contract, swap_data['amountIn'])
 
         # Execute the swap transaction
         print("\nExecuting the swap tx on-chain...")

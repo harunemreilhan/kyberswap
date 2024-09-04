@@ -1,11 +1,11 @@
 from src.swap import V1Swap
-import asyncio
 
-async def main():
-    # Example usage
-    v1_swap = V1Swap()
-    await v1_swap.v1_swap()
+class Manager:
+    def __init__(self, private_key):
+        self.v1_swap = V1Swap(private_key=private_key)
 
+    async def buy(self, usdt, token, amount_in):
+        await self.v1_swap.v1_swap(token_in=usdt, token_out=token, amount_in=amount_in)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    async def sell(self, token, usdt, amount_in):
+        await self.v1_swap.v1_swap(token_in=token, token_out=usdt, amount_in=amount_in)
