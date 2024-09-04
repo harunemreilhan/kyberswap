@@ -5,8 +5,6 @@ from termcolor import colored
 from web3 import Web3
 import datetime
 import os
-import json
-from main import Trader
 import logging
 from src.check_balances import get_token_balance
 from src.constants import usdt, token
@@ -51,36 +49,42 @@ def check_wallets_balance(wallets):
     tx_fee = web3.fromWei((GAS_PRICE * GAS_LIMIT) * 4, 'ether')
     for wallet in wallets:
         address = wallet['address']
-        bnb_balance = trader.get_bnb_balance(address, in_ether=True)
-        token_balance = trader.get_token_balance(address)
+        bnb_balance = get_token_balance(wallet=address, token=usdt, in_ether=True)
+        token_balance = get_token_balance(wallet=address, token=token)
         if bnb_balance > tx_fee or token_balance > 1:
             active_wallets.append(wallet)
     return active_wallets
 
 def distribute_funds(admin_address, admin_private_key, wallets, total_amount):
+    usdt_contract = web3.eth.contract(address=usdt.address, abi=usdt.abi)  # Provide the correct ABI
     nonce = web3.eth.get_transaction_count(admin_address)
     gas_fee_per_tx = GAS_LIMIT * GAS_PRICE + 100
     amount_per_wallet = (total_amount - gas_fee_per_tx * len(wallets)) / len(wallets)
 
     for wallet in wallets:
         address = wallet['address']
-        tx = {
-            'nonce': nonce,
-            'to': address,
-            'value': int(amount_per_wallet),
+        # Convert the amount to the correct decimals for USDT
+        amount_in_usdt = int(amount_per_wallet * (10 ** usdt.decimals))
+
+        # Prepare the transaction to transfer USDT
+        tx = usdt_contract.functions.transfer(address, amount_in_usdt).buildTransaction({
+            'chainId': web3.eth.chain_id,
             'gas': GAS_LIMIT,
-            'gasPrice': GAS_PRICE
-        }
+            'gasPrice': GAS_PRICE,
+            'nonce': nonce
+        })
+
+        # Sign the transaction
         signed_tx = web3.eth.account.sign_transaction(tx, admin_private_key)
         try:
-            print(colored(f"Sending {web3.fromWei(amount_per_wallet, 'ether')} BNB to {address}...", 'yellow'))
+            print(colored(f"Sending {web3.fromWei(amount_in_usdt, 'ether')} USDT to {address}...", 'yellow'))
             tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
             web3.eth.wait_for_transaction_receipt(tx_hash)
-            print(colored(f"Successfully sent {web3.fromWei(amount_per_wallet, 'ether')} BNB to {address}", 'green'))
+            print(colored(f"Successfully sent {web3.fromWei(amount_in_usdt, 'ether')} USDT to {address}", 'green'))
             time.sleep(5)
         except Exception as e:
-            logging.error(f"Failed to send BNB to {address}: {e}")
-            print(colored(f"Failed to send BNB to {address}: {e}", 'red'))
+            logging.error(f"Failed to send USDT to {address}: {e}")
+            print(colored(f"Failed to send USDT to {address}: {e}", 'red'))
         nonce += 1
 
 def send_bnb(address_from, private_key, address_to, amount_in_bnb):
